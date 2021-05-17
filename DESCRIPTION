@@ -1,0 +1,18 @@
+Package: acoustics
+Type: Package
+Title: Acoustics Analysis Package
+Version: 0.1.0
+Author: Nikhith Kalkunte, SmrutiPimplikar, Luke Larter
+Maintainer: The package maintainer <nkalkunte@utexas.edu>
+Description: This package supports the visualization and analysis of acousitic data.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.1
+Imports: 
+    seewave,
+    tibble
+Suggests: rmarkdown, knitr
+VignetteBuilder: knitr
+Depends: 
+    R (>= 2.10)

@@ -1,0 +1,311 @@
+---
+title: "Acoustic Data Analysis Vignette"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Acoustic Data Analysis Vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(acoustics)
+library(tuneR)
+library(seewave)
+library(soundgen)
+```
+
+# Acoustic Data Analysis
+
+- Analysis of acoustic data can have many uses, from engineering to audio production. In behavioral ecology, analyzing vocalizations can allow us to uncover which selection pressures have shaped the form of animal signals and signal preferences.
+
+- For example, the frequencies of animal vocalizations often correlate with body size, and the rate of delivery of notes in songs often correlates with male condition. This can give us an idea as to why receivers often prefer vocalizations that are lower in frequency and delivered at a faster rate. 
+
+- To find these correlations, it is necessary to be able to extract spectral and temporal values from recordings of vocalizations. There are several packages in R which allow us to do this, which we will discuss today.
+
+
+# The Dataset:
+Sound files used for this project were downloaded from Dryad. They were lab-recorded male zebrafinch songs that were used as playback stimuli in the following study:
+
+D'Amelio, Pietro B. et al. (2018), Data from: Individual recognition of opposite sex vocalizations in the zebra finch, Dryad, Dataset, https://doi.org/10.5061/dryad.4g8b7
+
+# Acoustic Data in R
+
+Objects of the wave class have the following structure
+- .. @left : NUMERIC
+
+
+- .. @right : NUMERIC
+
+
+- .. @stereo : LOGICAL
+
+the wave can be 'monophonic' (one channel for recording and play back) or 'stereophonic' (two audio channels) 
+
+
+- .. @samp.rate :NUMERIC
+
+number of times the audio has been sampled, 44100 for CD quality
+
+- .. @bit : NUMERIC
+
+sound pressure values as integer values, 16 for CD quality
+
+
+- .. @pcm : LOGICAL
+
+PCM or IEEE_FLOAT format 
+
+
+## Importing Data Files
+The tuneR function has various functions that facilitate the reading in of different audio file formats. Here we use readWave function to read in .wav files. 
+```{r}
+# #Sample 1 
+# aud1 <- "zebra finch songs/f_mal11_song_6.wav"
+# dat1 <- readWave(aud1)
+# #Sample 2
+# aud2 <- "zebra finch songs/f_mal1_song_1.wav"
+# dat2 <- readWave(aud2)
+# #Sample 3
+# aud3 <- "zebra finch songs/f_mal5_song_1.wav"
+# dat3 <- readWave(aud3)
+# #Sample 4
+# aud4 <- "zebra finch songs/m_mal2_song_1.wav"
+# dat4 <- readWave(aud4)
+# #Sample 5
+# aud5 <- "zebra finch songs/m_mal9_song_4.wav"
+# dat5 <- readWave(aud5)
+
+#Playing and shoring Data structure of sound files
+#setWavPlayer('/usr/bin/afplay') #using the built in command line audio player
+listen(dat1)
+str(dat1)
+```
+
+## Visualizing Sound Files
+While there are various ways to visualize the data encompassed in a sound file, by the far the most common is plotting the amplitude over time in a plot called an Oscillogram. 
+Since our data is monophonic and has one channel, we plot the left channel (@left) using the plot function. 
+```{r}
+sig1 <- dat1@left
+# plot waveform
+plot(sig1, type = 'l', xlab = 'Time', ylab = 'Amplitude')
+title('Sample 1')
+```
+
+We can also use the oscillo function from the seewave package.
+```{r}
+oscillo(dat1)
+title('Sample 1')
+```
+
+Now we can plot all of our samples. 
+```{r}
+#par(mfrow=c(3,2))
+# plot waveform
+plot(sig1, type = 'l', xlab = 'Time', ylab = 'Amplitude')
+title('Sample 1')
+
+sig2 <- dat2@left
+# plot waveform
+plot(sig2, type = 'l', xlab = 'Time', ylab = 'Amplitude')
+title('Sample 2')
+
+sig3 <- dat3@left
+# plot waveform
+plot(sig3, type = 'l', xlab = 'Time', ylab = 'Amplitude')
+title('Sample 3')
+
+sig4 <- dat4@left
+# plot waveform
+plot(sig4, type = 'l', xlab = 'Time', ylab = 'Amplitude')
+title('Sample 4')
+
+sig5 <- dat5@left
+# plot waveform
+plot(sig5, type = 'l', xlab = 'Time', ylab = 'Amplitude')
+title('Sample 5')
+```
+Another common visualization of sound files are Spectrograms.These represent the variation of sounds frequency over time. The spectrogram below has been overlaid by an amplitude plot. The loudest amplitude in the signal shown is 0dB - in red. 
+The spectro() function in the seewave package allows us to plot this spectrogram. 
+spectro() requires the signal to be plotted, f = sampling frequency of the wave, palette = colour palette for amp, collevels = set of levels used to define a range of amplitudes in the spectrogram.
+
+```{r}
+#data(sig1)
+dev.off()
+p = spectro(sig1,f=44100,
+palette=temp.colors,
+collevels=seq(-100,0,1))
+title("Sample 1")
+p
+```
+
+#data(sig2)
+spectro(sig2,f=44100,
+palette=temp.colors,
+collevels=seq(-100,0,1))
+title("Sample 2")
+
+#data(sig3)
+
+spectro(sig3,f=44100,
+palette=temp.colors,
+collevels=seq(-100,0,1))
+title("Sample 3")
+
+#data(sig4)
+frame()
+spectro(sig4,f=44100,
+palette=temp.colors,
+collevels=seq(-100,0,1))
+title("Sample 4")
+
+#data(sig5)
+frame()
+spectro(sig5,f=44100,
+palette=temp.colors,
+collevels=seq(-100,0,1))
+title("Sample 5")
+
+
+```
+
+Having visualized our data, now we may pull out some characteristics from our waveforms in order to compare samples. 
+
+## Summary Characteristics of Sound Files
+
+Total entropy is a measure of the noisiness of a signal. This is a useful early parameter to calculate as it may indicate the validity of all other parameters and also if a data cleaning strategy should be employed. Total entropy may be calculated using the H function from the seewave package. 
+
+The Dominant frequency (DF) is a  useful characteristic of species calls. It is defined as the frequency of sound with the highest amplitude in our sample at each time point. We can easily find the DF of our samples using the dfreq function in the seewave package. In order to get the dominant frequency across the entire recording, we need to set the window length in dfreq to the length of each signal.
+
+Fundamental Frequency (FF) is another useful metric of vocalizations. Defined as the lowest frequency of a waveform, it is the frequency that is perceived to be lowest by mammalian ears. We may find FF using the fund function from the seewave package. 
+
+For convenience, extraction of these parameters are bundled in a custom written function, called featExtract. 
+
+```{r}
+
+feat1 = featExtract(dat1)
+feat2 = featExtract(dat2)
+feat3 = featExtract(dat3)
+feat4 = featExtract(dat4)
+feat5 = featExtract(dat5)
+
+data = rbind(feat1, feat2, feat3, feat4, feat5)
+data
+
+```
+
+
+
+
+Use readWave from the tuneR library to read in our wav files:
+
+```{r}
+#LL=readWave("data/m_mal2_song_1.wav")
+play(LL)
+```
+
+## Visualizing Temporal Characteristics of Sound 
+- When analyzing animal vocalizations, or other sounds, temporal characteristics are often of interest as different call types typically differ in temporal structure. The soundGen package has many functions to tease out the temporal patterns present in vocalizations. 
+
+- First we will use the segment() function to look for patterns in our zebrafinch vocalizations. This function allows us to identify bursts of vocal activity, as well as identify continuous syllables. 
+
+- The key parameters to set here relate to noise, as our signal must be teased apart from any background noise to be properly processed. Sounds recorded in the field can have a great deal of environmental noise due to abiotic and biotic sources, so tweaking parameters related to noise will be crucial for allowing the algorithm to differentiate between signal and noise. Sounds recorded in the lab will have less noise, but may still have unwanted noise due to breathing sounds or movement of the focal animal. 
+
+- The segment() function assumes that the sound of interest to us will be the loudest sound in our recording, and then the user can set the proportion of the soundfile they expect to contain noise (propNoise), as well as the signal-to-noise ratio (SNR) that must be exceeded in order for the sound to be identified as our signal. Users need to tune these to find acceptable balance between false-positives and false-negatives when detecting signals. 
+
+- Setting the shortest acceptable syllable length (in ms) will also be important. this sets a lower bound on what can be categorized as a syllable. Here we set it to 5ms (shortestSyl = 5).
+
+- There are also a few methods you can use, but because we have already been talking about spectrograms, I have opted for the spectrogram method (method='spec'). 
+
+### Plot with SNR= 2
+
+```{r}
+dev.off()
+seg_LL_2=segment(LL, 
+               SNR = 2, 
+               plot = TRUE, 
+               method='spec', 
+               propNoise=0.386, 
+               shortestSyl = 5, 
+               showLegend=TRUE )
+```
+
+- Here, we see red stars denoting which segments have been classified as syllables, blue lines denoting the durations of these continuous, separate syllables, and a green line envelope denoting bursts of sound activity. Not all peaks that may be of interest to us are flagged as significantly syllabic (e.g. ~200ms-300ms). We can tweak the parameters and see whether this changes things.
+
+
+### Plot with SNR = 1
+
+```{r}
+dev.off()
+seg_LL_1=segment(LL, 
+               SNR = 1, 
+               plot = TRUE, 
+               method='spec', 
+               propNoise=0.386, 
+               shortestSyl = 5, 
+               showLegend=TRUE )
+```
+
+- More peaks are recognized as syllables. The best choice of these parameters will depend on the question of interest and knowledge regarding the study species. 
+
+  
+
+
+## Extracting Temporal values
+
+- As well as visualizing the burst and syllable structure, you can extract temporal values after making an object using the segment() function. This could be useful in comparing/contrasting different vocalization types. 
+
+- For example, in many acoustically-signalling animals, call rate is important in female choice. Thus, you might expect syllable length and inter-syllable pauses to differ between vocalizations shaped by mate choice, and those adapted for other purposes. 
+
+- After performing segmentation analysis, we can extract temporal summary statistics.
+
+```{r}
+#mean and median length of syllables
+mn_syl=round(mean(seg_LL_1$syllables$sylLen, na.rm = TRUE), digits=2)
+md_syl=round(median(seg_LL_1$syllables$sylLen, na.rm = TRUE), digits=2)
+paste("Mean syllable length is ", mn_syl, "ms, and the median syllable length is", md_syl, "ms.")
+
+#median pause length (ms)
+mn_pause=round(mean(seg_LL_1$syllables$pauseLen, na.rm = TRUE), digits=2)
+md_pause=round(median(seg_LL_1$syllables$pauseLen, na.rm = TRUE), digits=2)
+
+paste("Mean inter-syllable pause length is ", mn_pause, "ms, and the median inter-syllable pause length is", md_pause, "ms.")
+```
+
+
+
+## Visualizing Temporal Autocorrelation
+
+- We can also plot a self-similarity matrix that visualizes correlations in acoustic properties between different song segments by simply plotting the spectral qualities of the song against itself. In this image, warmer colours indicate higher degrees of similarity between different song segments.
+
+```{r}
+dev.off()
+ssm=ssm(LL)
+```
+
+- There does not seem to be a lot of temporal autocorrelation. Below is an SSM run on an altered portion of the same vocalization, however, I have cut and pasted a phrase found early in the vocalization at an additional 3 times during the song.
+
+```{r}
+#LL_repeat=readWave("zebra finch songs/m_mal2_song_1_altered.wav")
+play(LL_repeat)
+```
+
+```{r}
+dev.off()
+ssm_repeat=ssm(LL_repeat)
+```
+
+- You can see that the red lines indicating strong correlations appear where this repeated phrase is located. Thus, you can see how this visualization could be useful when checking for repeated elements in a vocalization.  
+
+## References
+
+
+- Anikin A (2019). “Soundgen: An open-source tool for synthesizing nonverbal vocalizations.” Behavior Research Methods, 51(2), 778–792. doi: 10.3758/s13428-018-1095-7, https://doi.org/10.3758/s13428-018-1095-7.
+
+- Sueur J, Aubin T, Simonis C (2008). “Seewave: a free modular tool for sound analysis and synthesis.” Bioacoustics, 18, 213-226. http://www.tandfonline.com/doi/abs/10.1080/09524622.2008.9753600.
